@@ -1,0 +1,23 @@
+name: Build APK
+on: workflow_dispatch
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 20}
+      - uses: actions/setup-java@v4
+        with: {distribution: temurin, java-version: 17}
+      - run: unzip -o death-runner-app.zip
+      - working-directory: death-runner-app
+        run: |
+          npm install
+          npx cap add android
+          sed -i 's#</application>#<meta-data android:name="com.google.android.gms.ads.APPLICATION_ID" android:value="ca-app-pub-4902372831369764~6254768724"/></application>#' android/app/src/main/AndroidManifest.xml
+          npx cap sync android
+          cd android && chmod +x gradlew && ./gradlew assembleDebug
+      - uses: actions/upload-artifact@v4
+        with:
+          name: app-debug
+          path: death-runner-app/android/app/build/outputs/apk/debug/app-debug.apk
